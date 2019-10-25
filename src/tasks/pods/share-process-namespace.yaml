@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: nginx
+spec:
+    shareProcessNamespace: true
+    containers:
+        - name: nginx-ctr
+          image: nginx
+        - name: shell-ctr
+          image: busybox
+          securityContext:
+              capabilities:
+                  add:
+                      - SYS_PTRACE
+          stdin: true
+          tty: true

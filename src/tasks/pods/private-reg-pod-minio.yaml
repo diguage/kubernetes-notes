@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: private-reg-minio
+spec:
+    containers:
+        - name: private-reg-minio-ctr
+          image: docker.diguage.com/minio/minio:v1.0.0
+    imagePullSecrets:
+        - name: diguage-docker-secret

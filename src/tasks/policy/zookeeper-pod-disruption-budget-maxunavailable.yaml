@@ -1,0 +1,9 @@
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+    name: zk-pdb
+spec:
+    maxUnavailabel: 1
+    slector:
+        matchLabels:
+            app: zookeeper

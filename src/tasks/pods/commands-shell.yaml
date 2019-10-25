@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    purpose: demonstrate-command
+  name: command-demo
+  namespace: default
+spec:
+  containers:
+  - args: ["-c", "while true; do echo hello; sleep 10; done"]
+    command: ["/bin/sh"]
+    image: debian
+    name: command-demo-ctr
+  restartPolicy: OnFailure

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: private-reg-memcached
+spec:
+    containers:
+        - name: private-reg-memcached-ctr
+          image: memcached
+    imagePullSecrets:
+        - name: diguage-docker-secret

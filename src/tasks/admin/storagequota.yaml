@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+    name: storagequota
+    namespace: limitrange-example
+spec:
+    hard:
+        persistentvolumeclaims: "5"
+        requests.storage: "5Gi"

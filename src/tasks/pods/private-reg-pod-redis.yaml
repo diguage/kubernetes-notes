@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+    name: private-reg-redis
+spec:
+    containers:
+        - name: private-reg-redis-ctr
+          image: docker.diguage.com/redis/redis:v1.0.0
+    imagePullSecrets:
+        - name: diguage-docker-secret
