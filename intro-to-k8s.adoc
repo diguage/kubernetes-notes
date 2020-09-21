@@ -1,0 +1,343 @@
+= Kubernetes 从入门到…
+
+副标题：放弃还是深入？这是一个问题。
+
+To be or not to be? It's a problem.
+
+Kubernetes in Action 中有大量非常棒的图。
+
+// image::intro-to-k8s/[]
+image::intro-to-k8s/ReplicationController-add-pod.png[]
+
+== 一个问题
+
+如果现在有一千台机器。请问，如何提高这些机器的资源利用率？
+
+== 回顾历史
+
+Google 面临的问题
+
+Borg 的出现
+
+== Docker
+
+image::intro-to-k8s/docker-vs-vm.png[]
+
+image::intro-to-k8s/Docker-images-registries-and-containers.png[]
+
+image::intro-to-k8s/kubernetes-run-containers-image.png[]
+
+image::intro-to-k8s/organizing-with-pod-labels.png[]
+
+Docker 原理详解
+
+. Namespace
+. cgroup
+
+https://rook.io/[Rook^]
+
+== 安装
+
+https://github.com/kubernetes-sigs/kubespray[kubernetes-sigs/kubespray: Deploy a Production Ready Kubernetes Cluster^]
+
+== Pod vs Docker
+
+[source,bash]
+----
+$ kubectl explain pods # 可以解释相关对象
+$ kubectl explain pod.spec
+$ kubectl port-forward kubia-manual 8888:8080 # 端口转发
+----
+
+image::intro-to-k8s/kubectl-port-forward.png[]
+
+=== liveness probes
+=== readiness probes
+
+== Job
+
+== CronJob
+
+== ReplicaSet
+
+
+image::intro-to-k8s/ReplicationController-recreate-pod.png[]
+
+image::intro-to-k8s/ReplicationController-reconciliation-loop.png[]
+
+image::intro-to-k8s/ReplicationController-add-pod.png[]
+
+
+=== ReplicationControllers
+
+image::intro-to-k8s/ReplicationController-change-pod-template.png[]
+
+=== ReplicaSet vs ReplicationControllers
+
+The main improvements of ReplicaSets over ReplicationControllers are their more expressive label selectors.
+
+Whereas a ReplicationController’s label selector only allows matching pods that include a certain label, a ReplicaSet’s selector also allows matching pods that lack a certain label or pods that include a certain label key, regardless of its value.
+
+Similarly, a ReplicationController can’t match pods based merely on the presence of a label key, regardless of its value, whereas a ReplicaSet can.
+
+== DaemonSet
+
+image::intro-to-k8s/DaemonSets-and-ReplicaSets.png[]
+
+image::intro-to-k8s/schedule-DaemonSet-with-label.png[]
+
+== Deployments
+
+// TODO 添加内容
+
+== Service
+
+image::intro-to-k8s/Service-redirect-curl.png[]
+
+image::intro-to-k8s/Service-NodePort.png[]
+
+image::intro-to-k8s/Service-LoadBalancer.png[]
+
+=== Headless Service
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+name: kubia-headless spec:
+clusterIP: None // This makes the service headless.
+----
+
+== Ingress
+
+image::intro-to-k8s/Ingress-routes-multiple-services.png[]
+
+image::intro-to-k8s/Ingress-accessing-pods-through-Ingress.png[]
+
+
+== Volumes
+
+. `emptyDir`
+. `hostPath`
+. `gitRepo`
+. `nfs`
+. `gcePersistentDisk`、`awsElasticBlockStore`、`azureDisk`
+. cinder, cephfs, iscsi, flocker, glusterfs, quobyte, rbd, flexVolume, vsphere- Volume, photonPersistentDisk,
+. `configMap`, `secret`, `downwardAPI`
+. `persistentVolumeClaim`
+
+=== `emptyDir`
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune
+spec:
+  containers:
+  - image: luksa/fortune
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+----
+
+=== `hostPath`
+
+image::intro-to-k8s/volume-hostPath.png[]
+
+=== `PersistentVolumes` & `PersistentVolumeClaims`
+
+image::intro-to-k8s/PV-and-PVC.png[]
+
+image::intro-to-k8s/PV-no-namespace.png[]
+
+image::intro-to-k8s/PV-and_PVC-vs-direct-storage.png[]
+
+
+== `ConfigMaps`
+
+[source,yaml]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fortune-config
+data:
+  sleep-interval: "25"
+
+----
+
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune-env-from-configmap
+spec:
+  containers:
+  - image: luksa/fortune:env
+    env:
+    - name: INTERVAL
+      valueFrom: 
+        configMapKeyRef:
+          name: fortune-config
+          key: sleep-interval
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+----
+
+image::intro-to-k8s/ConfigMap-create.png[]
+
+[source,yaml]
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fortune-args-from-configmap
+spec:
+  containers:
+  - image: luksa/fortune:args
+    env:
+    - name: INTERVAL
+      valueFrom: 
+        configMapKeyRef:
+          name: fortune-config
+          key: sleep-interval
+    args: ["$(INTERVAL)"]
+    name: html-generator
+    volumeMounts:
+    - name: html
+      mountPath: /var/htdocs
+  - image: nginx:alpine
+    name: web-server
+    volumeMounts:
+    - name: html
+      mountPath: /usr/share/nginx/html
+      readOnly: true
+    ports:
+    - containerPort: 80
+      protocol: TCP
+  volumes:
+  - name: html
+    emptyDir: {}
+----
+
+image::intro-to-k8s/ConfigMap-command-line-argument.png[]
+
+image::intro-to-k8s/ConfigMap-mounting-files.png[]
+
+// TODO 如何动态加载变更？
+
+// TODO downloadAPI 是什么玩意？
+
+== `Secrets`
+
+image::intro-to-k8s/Secret-and-ConfigMap-https.png[]
+
+
+
+== 展望未来
+
+=== 技术角度
+
+Apache Spark 从 2.3 版已经支持基于 Kubernetes 的部署。
+
+=== 实际案例
+
+据了解，美团已经有百分之八九十的业务迁移到 Kubernetes 上了。
+
+也许在不久将来，我们部门也会把全部业务迁移到 Kubernetes 上来。
+
+== 参考资料
+
+. https://book.douban.com/subject/26997846/[Kubernetes in Action (豆瓣)^]
+. https://kubernetes.io/docs/home/[Kubernetes Documentation^] -- 通常，官方文档是最好的学习资料，最起码是之一。
+. https://time.geekbang.org/column/intro/116[深入剖析Kubernetes-极客时间^] -- 读过的最好的 Kubernetes 资料，没有之一。 
+. https://jimmysong.io/kubernetes-handbook/[Kubernetes中文指南/云原生应用架构实践手册 by Jimmy Song(宋净超)^]
+. https://kubernetes.feisky.xyz/[Kubernetes指南^]
+. 
+
+
+
+== Ansible 安装
+
+[source,bash]
+----
+$ sudo apt update
+$ sudo apt install software-properties-common
+$ sudo apt-add-repository --yes --update ppa:ansible/ansible
+$ sudo apt install ansible
+
+$ sudo apt update && sudo apt install software-properties-common && sudo apt-add-repository --yes --update ppa:ansible/ansible && sudo apt update && sudo apt install ansible
+
+$ vim /etc/ansible/hosts
+
+[k8s]
+45.77.255.115
+45.77.170.100
+207.148.78.91
+
+$ ansible -m ping all # 测试
+----
+
+TIP: Ansible 的 PPA 仓库还不支持 Ubuntu 20.04。
+
+https://launchpad.net/~ansible/+archive/ubuntu/ansible
+
+可以考虑在本地生成一对密钥，然后复制到所有机器上去。
+
+https://cloud.tencent.com/developer/article/1347893[如何在Ubuntu 18.04上安装和配置Ansible - 云+社区 - 腾讯云^]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
